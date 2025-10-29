@@ -37,7 +37,7 @@ jobs:
           ASSETS_URLS=$(jq -r '.assets[].browser_download_url' ../pre.json)
           for URL in $ASSETS_URLS; do
             echo "::notice::Downloading $URL"
-            curl -L -O "$URL"
+            curl -L -H "Authorization: token $GH_TOKEN" -O "$URL"
           done
           ls -la
 
