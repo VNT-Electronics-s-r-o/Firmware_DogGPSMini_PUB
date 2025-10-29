@@ -1,0 +1,80 @@
+# Tenhle fungoval ale neprejenovaval sha:
+name: Promote BETA to Pre-release (rename to rcN)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Základní verze v91'
+        required: true
+      rc_suffix:
+        description: 'Suffix pro RC (např. -rc1, -rc2)'
+        required: true
+        default: '-rc1'
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ github.event.inputs.version }}
+      RC_SUFFIX: ${{ github.event.inputs.rc_suffix }}
+
+    steps:
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      # Najdi DRAFT betu (draft release) podle názvu/tagu – draft ještě nemá skutečný git tag
+      - name: Find DRAFT beta release (no git tag yet)
+        id: find
+        run: |
+          set -e
+          gh api repos/${GITHUB_REPOSITORY}/releases?per_page=100 > list.json
+          RID=$(jq -r --arg ver "v${VERSION}" '
+            .[] | select(.draft==true) |
+            select(
+              (.name == ("Firmware " + $ver + " BETA")) or
+              (.tag_name == ($ver + "-beta"))
+            ) | .id
+          ' list.json | head -n1)
+          if [ -z "$RID" ] || [ "$RID" = "null" ]; then
+            echo "::error::Draft release for version v${VERSION} not found. Spusť nejdřív BETA workflow."
+            exit 1
+          fi
+          echo "rid=$RID" >> $GITHUB_OUTPUT
+          gh api repos/${GITHUB_REPOSITORY}/releases/$RID > rel.json
+          echo "Found draft release id=$RID"
+
+      # Přepni draft na pre-release (zveřejni) a dej mu RC název
+      - name: Publish as PRE-RELEASE
+        run: |
+          # Název např. "Firmware v91 rc1 (pre-release)"
+          TRIMMED_RC=${RC_SUFFIX#-}
+          gh api -X PATCH repos/${GITHUB_REPOSITORY}/releases/${{ steps.find.outputs.rid }} \
+            -f draft=false -f prerelease=true \
+            -f name="Firmware v${VERSION} ${TRIMMED_RC} (pre-release)"
+
+      # Přejmenuj všechny *.zip i *.sha256:
+      # ...-vX(-beta|-rcM)?.ext  →  ...-vX-rcN.ext
+      - name: Rename assets from -beta/-rcM to RC suffix
+        run: |
+          set -e
+          # načti čerstvý stav releasu (po publishi)
+          gh api repos/${GITHUB_REPOSITORY}/releases/${{ steps.find.outputs.rid }} > rel2.json
+          jq -c '.assets[] | {id: .id, name: .name}' rel2.json > assets.json
+
+          while read -r A; do
+            AID=$(echo "$A"   | jq -r '.id')
+            NAME=$(echo "$A"  | jq -r '.name')
+
+            # Cíl: nahradit "_vX[-beta|-rcM].ext" → "-vX${RC_SUFFIX}.ext"
+            NEW=$(echo "$NAME" | sed -E "s/_v${VERSION}(-(beta|rc[0-9]+))?(\.[A-Za-z0-9.]+)$/-v${VERSION}${RC_SUFFIX}\3/i")
+            if [ "$NEW" != "$NAME" ]; then
+              echo "Renaming: $NAME -> $NEW"
+              gh api -X PATCH repos/${GITHUB_REPOSITORY}/releases/assets/${AID} -f name="$NEW" >/dev/null
+            else
+              echo "Skipping (no match): $NAME"
+            fi
+          done < assets.json
