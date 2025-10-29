@@ -2,13 +2,13 @@ name: Upload BETA firmware (multi-variant)
 
 on:
   push:
-    branches: [ main ]             # zmƒõ≈à na 'main', pokud pou≈æ√≠v√°≈° main
+    branches: [ main ]             # zmÏÚ na 'main', pokud pouûÌv·ö main
     paths:
       - 'release-assets/**'
   workflow_dispatch:
     inputs:
       version:
-        description: 'SemVer verze (nap≈ô. 1.2.3) ‚Äî p≈ôi ruƒçn√≠m spu≈°tƒõn√≠'
+        description: 'SemVer verze (nap¯. 1.2.3) ó p¯i ruËnÌm spuötÏnÌ'
         required: true
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
         with:
           fetch-depth: 1
 
-      # 1) Zjisti verzi z n√°zv≈Ø bez -beta (‚Ä¶-vX.zip) nebo z inputu
+      # 1) Zjisti verzi z n·zv˘ bez -beta (Ö-vX.zip) nebo z inputu
       - name: Detect version (from filenames without -beta)
         id: detect
         shell: bash
@@ -39,13 +39,13 @@ jobs:
             FILES=(release-assets/*.zip)
             (( ${#FILES[@]} > 0 )) || { echo "::error::No .zip files in release-assets/"; exit 1; }
             FIRST="$(basename "${FILES[0]}")"
-            if [[ "$FIRST" =~ -v([0-9]+\.[0-9]+\.[0-9]+)\.zip$ ]]; then
+            if [[ "$FIRST" =~ -v([0-9]+)\.zip$ ]]; then
               VERSION="${BASH_REMATCH[1]}"
             else
               echo "::error::Cannot parse version from filename: $FIRST"
               exit 1
             fi
-            # ovƒõ≈ô, ≈æe v≈°echny maj√≠ stejnou verzi (bez -beta)
+            # ovÏ¯, ûe vöechny majÌ stejnou verzi (bez -beta)
             for f in "${FILES[@]}"; do
               BN="$(basename "$f")"
               [[ "$BN" =~ -v${VERSION}\.zip$ ]] || { echo "::error::Mixed versions detected: $BN"; exit 1; }
@@ -54,8 +54,8 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Detected version: $VERSION"
 
-      # 2) Zjisti MODEL prefix (nap≈ô. EDCDEV) a validuj po≈æadovan√© mutace (bez -beta v n√°zvu)
-      - name: Validate required variants & detect MODEL
+      # 2) ExistujÌ vöechny poûadovanÈ varianty FW (bez -beta v n·zvu)
+      - name: Validate required variants
         id: model
         shell: bash
         run: |
@@ -64,54 +64,40 @@ jobs:
           test -d release-assets || { echo "::error::Missing release-assets/"; exit 1; }
           ls -la release-assets
 
-          # vyzvedni MODEL z prvn√≠ho souboru (v≈°e p≈ôed '-P..B..-v')
-          FIRST="$(basename "$(ls release-assets/*.bin | head -n1)")"
-          if [[ "$FIRST" =~ ^([A-Z0-9]+)-P(6|8|10|15)B(1|2)-v${VERSION}\.bin$ ]]; then
-            MODEL="${BASH_REMATCH[1]}"
-          else
-            echo "::error::Filename format invalid (expected <MODEL>-P..B..-v${VERSION}.bin): $FIRST"
-            exit 1
-          fi
-
-          # uprav, pokud nevyd√°v√°≈° v≈°echny mutace
-          REQUIRED="P15B1 P10B1 P8B1 P6B1 P15B2 P8B2 P6B2"
+          # uprav, pokud nevyd·v·ö vöechny mutace
+          REQUIRED="petra_hw2_dev petra_hw3_dev"
 
           FAIL=0
           for MUT in $REQUIRED; do
-            FILE="${MODEL}-${MUT}-v${VERSION}.bin"
+            FILE="${MUT}-v${VERSION}.zip"
             if [ ! -f "release-assets/$FILE" ]; then
               echo "::error::Missing expected asset: $FILE"
               FAIL=1
             fi
-            echo "$FILE" | grep -Eq "^${MODEL}-P(6|8|10|15)B(1|2)-v${VERSION}\.bin$" || { echo "::error::Filename invalid: $FILE"; FAIL=1; }
+            echo "$FILE" | grep -Eq "^v${VERSION}\.zip$" || { echo "::error::Filename invalid: $FILE"; FAIL=1; }
           done
           [ $FAIL -eq 0 ] || exit 1
 
-          echo "model=$MODEL" >> "$GITHUB_OUTPUT"
-          echo "Detected MODEL: $MODEL"
-
-      # 3) P≈ôiprav v√Ωstupn√≠ slo≈æku 'out/' s p≈ôejmenovan√Ωmi -beta soubory a jejich SHA-256
+      # 3) P¯iprav v˝stupnÌ sloûku 'out/' s p¯ejmenovan˝mi -beta soubory a jejich SHA-256
       - name: Prepare -beta artifacts (copy & rename)
         shell: bash
         run: |
           set -e
-          VERSION='${{ steps.detect.outputs.version }}'
-          MODEL='${{ steps.model.outputs.model }}'
           mkdir -p out
           shopt -s nullglob
-          for f in release-assets/*.bin; do
+          for f in release-assets/*.zip; do
             BN="$(basename "$f")"
-            # p≈ôeveƒè <MODEL>-P..B..-vX.Y.Z.bin -> <MODEL>-P..B..-vX.Y.Z-beta.bin
-            NEW="${BN%.bin}-beta.bin"
+            # p¯eveÔ hw_version-vX.zip -> hw_version-vX-beta.zip
+            NEW="${BN%.zip}-beta.zip"
             cp "release-assets/$BN" "out/$NEW"
           done
           cd out
-          for f in *-beta.bin; do
+          for f in *-beta.zip; do
             sha256sum "$f" | awk '{print $1 "  " FILENAME}' FILENAME="$f" > "$f.sha256"
           done
           ls -la
 
-      # 4) Pokud existuje draft pro tuto verzi, sma≈æ shodn√© -beta assety (aby ≈°el re-run)
+      # 4) Pokud existuje draft pro tuto verzi, smaû shodnÈ -beta assety (aby öel re-run)
       - name: Clean existing -beta assets in existing draft (if any)
         shell: bash
         run: |
@@ -126,7 +112,7 @@ jobs:
             ) | .id
           ' list.json | head -n1)
           if [ -n "$RID" ] && [ "$RID" != "null" ]; then
-            echo "Found existing draft release id=$RID ‚Äî cleaning *-beta.* assets"
+            echo "Found existing draft release id=$RID ó cleaning *-beta.* assets"
             gh api repos/${GITHUB_REPOSITORY}/releases/$RID > rel.json
             for f in out/*; do
               BASENAME=$(basename "$f")
@@ -137,10 +123,10 @@ jobs:
               fi
             done
           else
-            echo "No existing draft found ‚Äî a new one will be created."
+            echo "No existing draft found ó a new one will be created."
           fi
 
-      # 5) Vytvo≈ô/aktualizuj BETA release jako DRAFT a nahraj *-beta.* artefakty
+      # 5) Vytvo¯/aktualizuj BETA release jako DRAFT a nahraj *-beta.* artefakty
       - name: Create or Update BETA release (as draft)
         uses: softprops/action-gh-release@v2
         with:
@@ -149,5 +135,5 @@ jobs:
           draft: true
           prerelease: false
           files: |
-            out/*-beta.bin
-            out/*-beta.bin.sha256
+            out/*-beta.zip
+            out/*-beta.zip.sha256
