@@ -70,7 +70,7 @@ jobs:
             NAME=$(echo "$A"  | jq -r '.name')
 
             # Cíl: nahradit "_vX[-beta|-rcM].ext" → "-vX${RC_SUFFIX}.ext"
-            NEW=$(echo "$NAME" | sed -E "s/_v${VERSION}(-(beta|rc[0-9]+))?(\.[A-Za-z0-9.]+)$/-v${VERSION}${RC_SUFFIX}\3/i")
+            NEW=$(echo "$NAME" | sed -E "s/_v${VERSION}(-(beta|rc[0-9]+))?(\.[A-Za-z0-9.]+)$/_v${VERSION}${RC_SUFFIX}\3/i")
             if [ "$NEW" != "$NAME" ]; then
               echo "Renaming: $NAME -> $NEW"
               gh api -X PATCH repos/${GITHUB_REPOSITORY}/releases/assets/${AID} -f name="$NEW" >/dev/null
