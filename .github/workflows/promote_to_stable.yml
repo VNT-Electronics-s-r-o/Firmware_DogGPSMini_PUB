@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Finální verze (např. 92)'
+        description: 'Finální verze (např. 91)'
         required: true
 
 jobs:
@@ -36,7 +36,7 @@ jobs:
           mkdir in && cd in
           ASSETS_URLS=$(jq -r '.assets[].browser_download_url' ../pre.json)
           for URL in $ASSETS_URLS; do
-            echo "downloading $URL"
+            echo "::notice::Downloading $URL"
             curl -L -O "$URL"
           done
           ls -la
