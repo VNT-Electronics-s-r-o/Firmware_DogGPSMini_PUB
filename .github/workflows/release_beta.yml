@@ -25,7 +25,7 @@ jobs:
         with:
           fetch-depth: 1
 
-      # 1) Zjisti verzi z názvů bez -beta (…-vX.Y.Z.bin) nebo z inputu
+      # 1) Zjisti verzi z názvů bez -beta (…-vX.zip) nebo z inputu
       - name: Detect version (from filenames without -beta)
         id: detect
         shell: bash
@@ -36,10 +36,10 @@ jobs:
           else
             test -d release-assets || { echo "::error::Missing release-assets/"; exit 1; }
             shopt -s nullglob
-            FILES=(release-assets/*.bin)
-            (( ${#FILES[@]} > 0 )) || { echo "::error::No .bin files in release-assets/"; exit 1; }
+            FILES=(release-assets/*.zip)
+            (( ${#FILES[@]} > 0 )) || { echo "::error::No .zip files in release-assets/"; exit 1; }
             FIRST="$(basename "${FILES[0]}")"
-            if [[ "$FIRST" =~ -v([0-9]+\.[0-9]+\.[0-9]+)\.bin$ ]]; then
+            if [[ "$FIRST" =~ -v([0-9]+\.[0-9]+\.[0-9]+)\.zip$ ]]; then
               VERSION="${BASH_REMATCH[1]}"
             else
               echo "::error::Cannot parse version from filename: $FIRST"
@@ -48,7 +48,7 @@ jobs:
             # ověř, že všechny mají stejnou verzi (bez -beta)
             for f in "${FILES[@]}"; do
               BN="$(basename "$f")"
-              [[ "$BN" =~ -v${VERSION}\.bin$ ]] || { echo "::error::Mixed versions detected: $BN"; exit 1; }
+              [[ "$BN" =~ -v${VERSION}\.zip$ ]] || { echo "::error::Mixed versions detected: $BN"; exit 1; }
             done
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
