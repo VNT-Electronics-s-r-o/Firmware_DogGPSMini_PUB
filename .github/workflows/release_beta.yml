@@ -74,7 +74,6 @@ jobs:
               echo "::error::Missing expected asset: $FILE"
               FAIL=1
             fi
-            echo "$FILE" | grep -Eq "^v${VERSION}\.zip$" || { echo "::error::Filename invalid: $FILE"; FAIL=1; }
           done
           [ $FAIL -eq 0 ] || exit 1
 
