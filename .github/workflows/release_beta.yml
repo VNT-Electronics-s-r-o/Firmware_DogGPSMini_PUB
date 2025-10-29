@@ -69,7 +69,7 @@ jobs:
 
           FAIL=0
           for MUT in $REQUIRED; do
-            FILE="${MUT}-v${VERSION}.zip"
+            FILE="${MUT}_v${VERSION}.zip"
             if [ ! -f "release-assets/$FILE" ]; then
               echo "::error::Missing expected asset: $FILE"
               FAIL=1
@@ -87,7 +87,7 @@ jobs:
           shopt -s nullglob
           for f in release-assets/*.zip; do
             BN="$(basename "$f")"
-            # pøeveï hw_version-vX.zip -> hw_version-vX-beta.zip
+            # pøeveï hw_version_vX.zip -> hw_version-vX-beta.zip
             NEW="${BN%.zip}-beta.zip"
             cp "release-assets/$BN" "out/$NEW"
           done
