@@ -45,9 +45,9 @@ jobs:
         run: |
           cd in
           for f in *; do
-            # Odstraň '-rcX' / '-beta' ze jména verze a přepiš na -v${VERSION}
-            NEW=$(echo "$f" | sed -E 's/_v([0-9]+\.[0-9]+\.[0-9]+)-(rc[0-9]+|beta(\.[0-9]+)?)\./_v\1./g')
-            NEW=$(echo "$NEW" | sed -E "s/_v[0-9]+\.[0-9]+\.[0-9]+/_v${VERSION}/g")
+            # Odstraň '-rcX' / '-beta' ze jména verze a přepiš na _v${VERSION}
+            NEW=$(echo "$f" | sed -E 's/_v([0-9]+)-(rc[0-9]+|beta(\.[0-9]+)?)\./_v\1./g')
+            NEW=$(echo "$NEW" | sed -E "s/_v[0-9]+/_v${VERSION}/g")
             if [ "$f" != "$NEW" ]; then
               echo "$f -> $NEW"
               mv "$f" "$NEW"
