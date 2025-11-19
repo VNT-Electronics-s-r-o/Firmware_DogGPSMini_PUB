@@ -8,8 +8,14 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'SemVer verze (napø. 1.2.3) — pøi ruèním spuštìní'
+        description: 'Verze FW'
         required: true
+      environment:
+        description: "Prostøedí"
+        type: choice
+        options:
+          - DEV
+          - PROD        
 
 jobs:
   beta:
@@ -33,25 +39,26 @@ jobs:
           set -e
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             VERSION="${{ github.event.inputs.version }}"
+            ENV="${{ github.event.inputs.version }}"
           else
-            test -d release-assets || { echo "::error::Missing release-assets/"; exit 1; }
-            shopt -s nullglob
-            FILES=(release-assets/*.zip)
-            (( ${#FILES[@]} > 0 )) || { echo "::error::No .zip files in release-assets/"; exit 1; }
-            FIRST="$(basename "${FILES[0]}")"
-            if [[ "$FIRST" =~ -v([0-9]+)\.zip$ ]]; then
-              VERSION="${BASH_REMATCH[1]}"
-            else
-              echo "::error::Cannot parse version from filename: $FIRST"
-              exit 1
-            fi
-            # ovìø, že všechny mají stejnou verzi (bez -beta)
-            for f in "${FILES[@]}"; do
-              BN="$(basename "$f")"
-              [[ "$BN" =~ -v${VERSION}\.zip$ ]] || { echo "::error::Mixed versions detected: $BN"; exit 1; }
-            done
+            echo "::error::Running scritp automatically without specifying version and environment - not allowed and not cool!!!"
+            exit 1
           fi
+          
+          # ovìø, že všechny mají stejnou verzi (bez -beta)
+          for f in "${FILES[@]}"; do
+              BN="$(basename "$f")"
+
+              # Check version and environment suffix: _dev or _prod
+              if [[ "$ENV" == "dev" ]]; then
+                  [[ "$BN" == *_dev_v${VERSION}.zip ]] || { echo "::error::Expected _dev_vX file, got: $BN"; exit 1; }
+              else
+                  [[ "$BN" == *_prod_v${VERSION}.zip ]] || { echo "::error::Expected _prod_vX file, got: $BN"; exit 1; }
+              fi
+          done
+
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "env=$ENV" >> "$GITHUB_OUTPUT"
           echo "Detected version: $VERSION"
 
       # 2) Existují všechny požadované varianty FW (bez -beta v názvu)
@@ -61,15 +68,21 @@ jobs:
         run: |
           set -e
           VERSION='${{ steps.detect.outputs.version }}'
+          ENV='${{ steps.detect.outputs.env }}'
+          
           test -d release-assets || { echo "::error::Missing release-assets/"; exit 1; }
           ls -la release-assets
 
-          # uprav, pokud nevydáváš všechny mutace
-          REQUIRED="petra_hw2_dev petra_hw3_dev"
+          # co pozaduju v danem prostredi za verze
+          if [[ "$ENV" == "dev" ]]; then
+              REQUIRED="petra_hw2 petra_hw3 petra_hw6"
+          else
+              REQUIRED="petra_hw2 petra_hw3 petra_hw4"
+          fi
 
           FAIL=0
           for MUT in $REQUIRED; do
-            FILE="${MUT}_v${VERSION}.zip"
+            FILE="${MUT}_${ENV}_v${VERSION}.zip"
             if [ ! -f "release-assets/$FILE" ]; then
               echo "::error::Missing expected asset: $FILE"
               FAIL=1
@@ -86,7 +99,7 @@ jobs:
           shopt -s nullglob
           for f in release-assets/*.zip; do
             BN="$(basename "$f")"
-            # pøeveï hw_version_vX.zip -> hw_version-vX-beta.zip
+            # pridani -beta
             NEW="${BN%.zip}-beta.zip"
             cp "release-assets/$BN" "out/$NEW"
           done
