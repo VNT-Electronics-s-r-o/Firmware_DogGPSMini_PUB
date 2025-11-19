@@ -14,8 +14,8 @@ on:
         description: "Environment"
         type: choice
         options:
-          - DEV
-          - PROD        
+          - dev
+          - prod        
 
 jobs:
   beta:
