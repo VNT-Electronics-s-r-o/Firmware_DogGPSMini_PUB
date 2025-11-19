@@ -1,17 +1,17 @@
-name: Upload BETA firmware (multi-variant)
+name: Upload BETA firmware
 
 on:
   push:
-    branches: [ main ]             # zmìò na 'main', pokud používáš main
+    branches: [ main ]
     paths:
       - 'release-assets/**'
   workflow_dispatch:
     inputs:
       version:
-        description: 'Verze FW'
+        description: 'FW Version'
         required: true
       environment:
-        description: "Prostøedí"
+        description: "Environment"
         type: choice
         options:
           - DEV
@@ -31,15 +31,15 @@ jobs:
         with:
           fetch-depth: 1
 
-      # 1) Zjisti verzi z názvù bez -beta (…-vX.zip) nebo z inputu
-      - name: Detect version (from filenames without -beta)
+      # 1) Input pro prostredi a verzi, kontrola souboru
+      - name: Detect and check version and env (from filenames without -beta)
         id: detect
         shell: bash
         run: |
           set -e
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             VERSION="${{ github.event.inputs.version }}"
-            ENV="${{ github.event.inputs.version }}"
+            ENV="${{ github.event.inputs.environment }}"
           else
             echo "::error::Running scritp automatically without specifying version and environment - not allowed and not cool!!!"
             exit 1
