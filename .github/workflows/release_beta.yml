@@ -1,10 +1,6 @@
 name: Upload BETA firmware
 
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'release-assets/**'
   workflow_dispatch:
     inputs:
       version:
