@@ -5,10 +5,10 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Základní verze v91'
+        description: 'FW Version'
         required: true
       rc_suffix:
-        description: 'Suffix pro RC (např. -rc1, -rc2)'
+        description: 'RC Suffix (-rcX)'
         required: true
         default: '-rc1'
 
