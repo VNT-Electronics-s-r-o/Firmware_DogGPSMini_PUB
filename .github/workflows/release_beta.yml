@@ -53,6 +53,7 @@ jobs:
           done
 
           echo "Detected version: $VERSION"
+          echo "::notice::S1"
 
       # 2) Existují všechny požadované varianty FW (bez -beta v názvu)
       - name: Validate required variants
@@ -80,6 +81,7 @@ jobs:
             fi
           done
           [ $FAIL -eq 0 ] || exit 1
+          echo "::notice::S2"
 
       # 3) Pøiprav výstupní složku 'out/' s pøejmenovanými -beta soubory a jejich SHA-256
       - name: Prepare -beta artifacts (copy & rename)
@@ -99,6 +101,7 @@ jobs:
             sha256sum "$f" | awk '{print $1 "  " FILENAME}' FILENAME="$f" > "$f.sha256"
           done
           ls -la
+          echo "::notice::S3"
 
       # 4) Pokud existuje draft pro tuto verzi, smaž shodné -beta assety (aby šel re-run)
       - name: Clean existing -beta assets in existing draft (if any)
@@ -112,7 +115,7 @@ jobs:
               --arg env_t "v${ENV}" '
                   .[] | select(.draft==true) |
                   select(
-                    (.name == ("Firmware " + $ver  " " + $env_t + " BETA")) or
+                    (.name == ("Firmware " + $ver + " " + $env_t + " BETA")) or
                     (.tag_name == ($ver + "_" + $env_t + "-beta"))
                   ) |
                   .id
@@ -131,6 +134,7 @@ jobs:
           else
             echo "No existing draft found — a new one will be created."
           fi
+          echo "::notice::S4"
 
       # 5) Vytvoø/aktualizuj BETA release jako DRAFT a nahraj *-beta.* artefakty
       - name: Create or Update BETA release (as draft)
