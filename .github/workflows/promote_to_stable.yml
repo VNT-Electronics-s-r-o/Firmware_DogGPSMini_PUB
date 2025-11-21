@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Finální verze (např. 91)'
+        description: 'FW Version'
         required: true
 
 jobs:
