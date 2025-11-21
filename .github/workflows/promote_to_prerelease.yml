@@ -7,6 +7,12 @@ on:
       version:
         description: 'FW Version'
         required: true
+      environment:
+        description: "Environment"
+        type: choice
+        options:
+          - dev
+          - prod         
       rc_suffix:
         description: 'RC Suffix (-rcX)'
         required: true
@@ -19,8 +25,9 @@ jobs:
       contents: write
     env:
       GH_TOKEN: ${{ github.token }}
-      VERSION: ${{ github.event.inputs.version }}
-      RC_SUFFIX: ${{ github.event.inputs.rc_suffix }}
+      VERSION="${{ github.event.inputs.version }}"
+      ENV="${{ github.event.inputs.environment }}"
+      RC_SUFFIX: "${{ github.event.inputs.rc_suffix }}"
 
     steps:
       - name: Install jq
@@ -32,13 +39,16 @@ jobs:
         run: |
           set -e
           gh api repos/${GITHUB_REPOSITORY}/releases?per_page=100 > list.json
-          RID=$(jq -r --arg ver "v${VERSION}" '
-            .[] | select(.draft==true) |
-            select(
-              (.name == ("Firmware " + $ver + " BETA")) or
-              (.tag_name == ($ver + "-beta"))
-            ) | .id
-          ' list.json | head -n1)
+          RID=$(jq -r \
+              --arg ver "v${VERSION}" \
+              --arg env_t "v${ENV}" '
+                  .[] | select(.draft==true) |
+                  select(
+                    (.name == ("Firmware " + $ver  " " + $env_t + " BETA")) or
+                    (.tag_name == ($ver + "_" + $env_t + "-beta"))
+                  ) |
+                  .id
+              ' list.json | head -n1)
           if [ -z "$RID" ] || [ "$RID" = "null" ]; then
             echo "::error::Draft release for version v${VERSION} not found. Spusť nejdřív BETA workflow."
             exit 1
@@ -54,7 +64,7 @@ jobs:
           TRIMMED_RC=${RC_SUFFIX#-}
           gh api -X PATCH repos/${GITHUB_REPOSITORY}/releases/${{ steps.find.outputs.rid }} \
             -f draft=false -f prerelease=true \
-            -f name="Firmware v${VERSION} ${TRIMMED_RC} (pre-release)"
+            -f name="Firmware v${VERSION} v${ENV} ${TRIMMED_RC} (pre-release)"
 
       # Přejmenuj všechny *.zip i *.sha256:
       # ...-vX(-beta|-rcM)?.ext  →  ...-vX-rcN.ext

@@ -63,8 +63,8 @@ jobs:
         shell: bash
         run: |
           set -e
-          VERSION='${{ steps.detect.outputs.version }}'
-          ENV='${{ steps.detect.outputs.env }}'
+          VERSION="${{ github.event.inputs.version }}"
+          ENV="${{ github.event.inputs.environment }}"
           
           test -d release-assets || { echo "::error::Missing release-assets/"; exit 1; }
           ls -la release-assets
@@ -110,15 +110,20 @@ jobs:
         shell: bash
         run: |
           set -e
-          VERSION='${{ steps.detect.outputs.version }}'
+          VERSION="${{ github.event.inputs.version }}"
+          ENV="${{ github.event.inputs.environment }}"
+          
           gh api repos/${GITHUB_REPOSITORY}/releases?per_page=100 > list.json
-          RID=$(jq -r --arg ver "v${VERSION}" '
-            .[] | select(.draft==true) |
-            select(
-              (.name == ("Firmware " + $ver + " BETA")) or
-              (.tag_name == ($ver + "-beta"))
-            ) | .id
-          ' list.json | head -n1)
+          RID=$(jq -r \
+              --arg ver "v${VERSION}" \
+              --arg env_t "v${ENV}" '
+                  .[] | select(.draft==true) |
+                  select(
+                    (.name == ("Firmware " + $ver  " " + $env_t + " BETA")) or
+                    (.tag_name == ($ver + "_" + $env_t + "-beta"))
+                  ) |
+                  .id
+              ' list.json | head -n1)
           if [ -n "$RID" ] && [ "$RID" != "null" ]; then
             echo "Found existing draft release id=$RID — cleaning *-beta.* assets"
             gh api repos/${GITHUB_REPOSITORY}/releases/$RID > rel.json

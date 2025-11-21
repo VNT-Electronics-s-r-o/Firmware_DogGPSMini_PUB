@@ -6,6 +6,12 @@ on:
       version:
         description: 'FW Version'
         required: true
+      environment:
+        description: "Environment"
+        type: choice
+        options:
+          - dev
+          - prod 
 
 jobs:
   stable:
@@ -15,6 +21,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       VERSION: ${{ github.event.inputs.version }}
+      ENV="${{ github.event.inputs.environment }}"
 
     steps:
       - name: Install jq and curl
