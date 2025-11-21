@@ -136,8 +136,8 @@ jobs:
       - name: Create or Update BETA release (as draft)
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.detect.outputs.version }}_${{ steps.detect.outputs.env }}-beta
-          name: Firmware v${{ steps.detect.outputs.version }} ${{ steps.detect.outputs.env }} BETA
+          tag_name: v${{ github.event.inputs.version }}_${{ github.event.inputs.environment }}-beta
+          name: Firmware v${{ github.event.inputs.version }} ${{ github.event.inputs.environment }} BETA
           draft: true
           prerelease: false
           files: |
