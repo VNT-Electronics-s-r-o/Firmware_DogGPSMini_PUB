@@ -7,7 +7,7 @@ on:
         description: 'FW Version'
         required: true
       environment:
-        description: "Environment"
+        description: 'Environment'
         type: choice
         options:
           - dev
@@ -53,7 +53,6 @@ jobs:
           done
 
           echo "Detected version: $VERSION"
-          echo "::notice::S1"
 
       # 2) Existují všechny požadované varianty FW (bez -beta v názvu)
       - name: Validate required variants
@@ -69,7 +68,7 @@ jobs:
           if [[ "$ENV" == "dev" ]]; then
               REQUIRED="petra_hw2 petra_hw3 petra_hw6"
           else
-              REQUIRED="petra_hw2 petra_hw3 petra_hw4"
+              REQUIRED="petra_hw2 petra_hw3"
           fi
 
           FAIL=0
@@ -81,7 +80,6 @@ jobs:
             fi
           done
           [ $FAIL -eq 0 ] || exit 1
-          echo "::notice::S2"
 
       # 3) Pøiprav výstupní složku 'out/' s pøejmenovanými -beta soubory a jejich SHA-256
       - name: Prepare -beta artifacts (copy & rename)
@@ -101,7 +99,6 @@ jobs:
             sha256sum "$f" | awk '{print $1 "  " FILENAME}' FILENAME="$f" > "$f.sha256"
           done
           ls -la
-          echo "::notice::S3"
 
       # 4) Pokud existuje draft pro tuto verzi, smaž shodné -beta assety (aby šel re-run)
       - name: Clean existing -beta assets in existing draft (if any)
@@ -111,12 +108,12 @@ jobs:
           
           gh api repos/${GITHUB_REPOSITORY}/releases?per_page=100 > list.json
           RID=$(jq -r \
-              --arg ver "v${VERSION}" \
-              --arg env_t "v${ENV}" '
+              --arg ver "${VERSION}" \
+              --arg env_t "${ENV}" '
                   .[] | select(.draft==true) |
                   select(
-                    (.name == ("Firmware " + $ver + " " + $env_t + " BETA")) or
-                    (.tag_name == ($ver + "_" + $env_t + "-beta"))
+                    (.name == ("Firmware v" + $ver + " " + $env_t + " BETA")) or
+                    (.tag_name == ("v" + $ver + "_" + $env_t + "-beta"))
                   ) |
                   .id
               ' list.json | head -n1)
@@ -134,14 +131,13 @@ jobs:
           else
             echo "No existing draft found — a new one will be created."
           fi
-          echo "::notice::S4"
 
       # 5) Vytvoø/aktualizuj BETA release jako DRAFT a nahraj *-beta.* artefakty
       - name: Create or Update BETA release (as draft)
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ github.event.inputs.version }}_${{ github.event.inputs.environment }}-beta
-          name: Firmware v${{ github.event.inputs.version }} ${{ github.event.inputs.environment }} BETA
+          tag_name: v${{ env.VERSION }}_${{ env.ENV }}-beta
+          name: Firmware v${{ env.VERSION }} ${{ env.ENV }} BETA
           draft: true
           prerelease: false
           files: |

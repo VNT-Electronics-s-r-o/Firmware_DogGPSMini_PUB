@@ -21,19 +21,19 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       VERSION: ${{ github.event.inputs.version }}
-      ENV=${{ github.event.inputs.environment }}
+      ENV: ${{ github.event.inputs.environment }}
 
     steps:
       - name: Install jq and curl
         run: sudo apt-get update && sudo apt-get install -y jq curl
 
-      - name: Get pre-release (tag vX-beta)
+      - name: Get pre-release (tag vX_env-beta)
         id: getpre
         run: |
           set -e
-          RJSON=$(gh api repos/${GITHUB_REPOSITORY}/releases/tags/v${VERSION}-beta || true)
+          RJSON=$(gh api repos/${GITHUB_REPOSITORY}/releases/tags/v${VERSION}_${ENV}-beta || true)
           if [ -z "$RJSON" ] || [ "$RJSON" = "null" ]; then
-            echo "::error::Pre-release (v${VERSION}-beta) not found."
+            echo "::error::Pre-release (v${VERSION}_${ENV}-beta) not found."
             exit 1
           fi
           echo "$RJSON" > pre.json
@@ -65,8 +65,8 @@ jobs:
       - name: Create STABLE release and upload
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ env.VERSION }}
-          name: Firmware v${{ env.VERSION }}
+          tag_name: v${{ env.VERSION }}_${{ env.ENV }}
+          name: Firmware v${{ env.VERSION }} ${{ env.ENV }}
           draft: false
           prerelease: false
           files: |
