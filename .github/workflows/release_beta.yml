@@ -20,6 +20,8 @@ jobs:
       contents: write
     env:
       GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ github.event.inputs.version }}
+      ENV: ${{ github.event.inputs.environment }}     
 
     steps:
       - name: Checkout repo
@@ -33,10 +35,7 @@ jobs:
         shell: bash
         run: |
           set -e
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.version }}"
-            ENV="${{ github.event.inputs.environment }}"
-          else
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
             echo "::error::Running scritp automatically without specifying version and environment - not allowed and not cool!!!"
             exit 1
           fi
@@ -53,8 +52,6 @@ jobs:
               fi
           done
 
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "env=$ENV" >> "$GITHUB_OUTPUT"
           echo "Detected version: $VERSION"
 
       # 2) Existují všechny požadované varianty FW (bez -beta v názvu)
@@ -63,8 +60,6 @@ jobs:
         shell: bash
         run: |
           set -e
-          VERSION="${{ github.event.inputs.version }}"
-          ENV="${{ github.event.inputs.environment }}"
           
           test -d release-assets || { echo "::error::Missing release-assets/"; exit 1; }
           ls -la release-assets
@@ -110,8 +105,6 @@ jobs:
         shell: bash
         run: |
           set -e
-          VERSION="${{ github.event.inputs.version }}"
-          ENV="${{ github.event.inputs.environment }}"
           
           gh api repos/${GITHUB_REPOSITORY}/releases?per_page=100 > list.json
           RID=$(jq -r \

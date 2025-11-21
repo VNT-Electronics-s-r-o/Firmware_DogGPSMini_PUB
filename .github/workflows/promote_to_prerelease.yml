@@ -25,9 +25,9 @@ jobs:
       contents: write
     env:
       GH_TOKEN: ${{ github.token }}
-      VERSION="${{ github.event.inputs.version }}"
-      ENV="${{ github.event.inputs.environment }}"
-      RC_SUFFIX: "${{ github.event.inputs.rc_suffix }}"
+      VERSION: ${{ github.event.inputs.version }}"
+      ENV: ${{ github.event.inputs.environment }}"
+      RC_SUFFIX: ${{ github.event.inputs.rc_suffix }}"
 
     steps:
       - name: Install jq
