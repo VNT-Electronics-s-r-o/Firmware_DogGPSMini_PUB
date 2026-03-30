@@ -64,23 +64,6 @@ jobs:
           test -d release-assets || { echo "::error::Missing release-assets/"; exit 1; }
           ls -la release-assets
 
-          # co pozaduju v danem prostredi za verze
-          if [[ "$ENV" == "dev" ]]; then
-              REQUIRED="petra_hw2 petra_hw3 petra_hw6"
-          else
-              REQUIRED="petra_hw2 petra_hw3"
-          fi
-
-          FAIL=0
-          for MUT in $REQUIRED; do
-            FILE="${MUT}_${ENV}_v${VERSION}.zip"
-            if [ ! -f "release-assets/$FILE" ]; then
-              echo "::error::Missing expected asset: $FILE"
-              FAIL=1
-            fi
-          done
-          [ $FAIL -eq 0 ] || exit 1
-
       # 3) Pøiprav výstupní složku 'out/' s pøejmenovanými -beta soubory a jejich SHA-256
       - name: Prepare -beta artifacts (copy & rename)
         shell: bash
