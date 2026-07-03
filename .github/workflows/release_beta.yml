@@ -40,7 +40,7 @@ jobs:
             exit 1
           fi
           
-          # ovìø, že všechny mají stejnou verzi (bez -beta)
+          # ovï¿½ï¿½, ï¿½e vï¿½echny majï¿½ stejnou verzi (bez -beta)
           for f in "${FILES[@]}"; do
               BN="$(basename "$f")"
 
@@ -54,7 +54,7 @@ jobs:
 
           echo "Detected version: $VERSION"
 
-      # 2) Existují všechny požadované varianty FW (bez -beta v názvu)
+      # 2) Existujï¿½ vï¿½echny poï¿½adovanï¿½ varianty FW (bez -beta v nï¿½zvu)
       - name: Validate required variants
         id: model
         shell: bash
@@ -64,7 +64,7 @@ jobs:
           test -d release-assets || { echo "::error::Missing release-assets/"; exit 1; }
           ls -la release-assets
 
-      # 3) Pøiprav výstupní složku 'out/' s pøejmenovanými -beta soubory a jejich SHA-256
+      # 3) Pï¿½iprav vï¿½stupnï¿½ sloï¿½ku 'out/' s pï¿½ejmenovanï¿½mi -beta soubory a jejich SHA-256
       - name: Prepare -beta artifacts (copy & rename)
         shell: bash
         run: |
@@ -83,7 +83,7 @@ jobs:
           done
           ls -la
 
-      # 4) Pokud existuje draft pro tuto verzi, smaž shodné -beta assety (aby šel re-run)
+      # 4) Pokud existuje draft pro tuto verzi, smaï¿½ shodnï¿½ -beta assety (aby ï¿½el re-run)
       - name: Clean existing -beta assets in existing draft (if any)
         shell: bash
         run: |
@@ -101,7 +101,7 @@ jobs:
                   .id
               ' list.json | head -n1)
           if [ -n "$RID" ] && [ "$RID" != "null" ]; then
-            echo "Found existing draft release id=$RID — cleaning *-beta.* assets"
+            echo "Found existing draft release id=$RID ï¿½ cleaning *-beta.* assets"
             gh api repos/${GITHUB_REPOSITORY}/releases/$RID > rel.json
             for f in out/*; do
               BASENAME=$(basename "$f")
@@ -112,12 +112,12 @@ jobs:
               fi
             done
           else
-            echo "No existing draft found — a new one will be created."
+            echo "No existing draft found ï¿½ a new one will be created."
           fi
 
-      # 5) Vytvoø/aktualizuj BETA release jako DRAFT a nahraj *-beta.* artefakty
+      # 5) Vytvoï¿½/aktualizuj BETA release jako DRAFT a nahraj *-beta.* artefakty
       - name: Create or Update BETA release (as draft)
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ env.VERSION }}_${{ env.ENV }}-beta
           name: Firmware v${{ env.VERSION }} ${{ env.ENV }} BETA
